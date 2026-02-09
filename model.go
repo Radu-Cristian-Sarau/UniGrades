@@ -43,14 +43,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// The "up" and "k" keys move the cursor up
 		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
+			m.cursor--
+			if m.cursor < 0 {
+				m.cursor = len(m.choices) - 1
 			}
 
 		// The "down" and "j" keys move the cursor down
 		case "down", "j":
-			if m.cursor < len(m.choices)-1 {
-				m.cursor++
+			m.cursor++
+			if m.cursor >= len(m.choices) {
+				m.cursor = 0
 			}
 
 		// The "enter" key and the spacebar (a literal space) toggle
