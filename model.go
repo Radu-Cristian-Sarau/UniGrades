@@ -5,6 +5,7 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type model struct {
@@ -16,7 +17,7 @@ type model struct {
 func initialModel() model {
 	return model{
 		// Our to-do list is a grocery list
-		choices: []string{"Buy carrots", "Buy celery", "Buy kohlrabi"},
+		choices: []string{"TU/e", "TUD", "TUM"},
 
 		// A map which indicates which choices are selected. We're using
 		// the map like a mathematical set. The keys refer to the indexes
@@ -69,15 +70,27 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+var (
+	tueRed  = lipgloss.Color("#c81919")
+	tudBlue = lipgloss.Color("#00a0da")
+	tumBlue = lipgloss.Color("#0066c1")
+
+	uniColors = map[string]lipgloss.Color{
+		"TU/e": tueRed,
+		"TUD":  tudBlue,
+		"TUM":  tumBlue,
+	}
+)
+
 func (m model) View() string {
 	// The header
-	s := "What should we buy at the market?\n\n"
+	s := "Select university: \n\n"
 
 	// Iterate over our choices
 	for i, choice := range m.choices {
 
 		// Is the cursor pointing at this choice?
-		cursor := "" // no cursor
+		cursor := " " // no cursor
 		if m.cursor == i {
 			cursor = ">" // cursor!
 		}
@@ -89,11 +102,12 @@ func (m model) View() string {
 		}
 
 		// Render the row
-		s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, choice)
+		style := lipgloss.NewStyle().Foreground(uniColors[choice])
+		s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, style.Render(choice))
 	}
 
 	// The footer
-	s += "\n Press q to quit.\n"
+	s += "\nPress Q or Ctrl + C to quit.\n"
 
 	// Send the UI for rendering
 	return s
