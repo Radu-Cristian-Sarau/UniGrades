@@ -33,6 +33,25 @@ func getAllCourses(client *mongo.Client) {
 	fmt.Printf("%s\n", jsonData)
 }
 
+func GetTableHeaders(client *mongo.Client) []string {
+	coll := client.Database("CourseInfo").Collection("TUe")
+	var result bson.D
+	opts := options.FindOne().SetProjection(bson.D{{Key: "_id", Value: 0}})
+	err := coll.FindOne(context.TODO(), bson.D{}, opts).Decode(&result)
+	if err == mongo.ErrNoDocuments {
+		fmt.Println("Cannot retrieve table headers: No courses were found in the database.")
+		return nil
+	}
+	if err != nil {
+		panic(err)
+	}
+	headers := make([]string, 0, len(result))
+	for _, elem := range result {
+		headers = append(headers, elem.Key)
+	}
+	return headers
+}
+
 func getCourseDataByName(client *mongo.Client, name string) {
 	coll := client.Database("CourseInfo").Collection("TUe")
 	var result bson.M
@@ -72,5 +91,6 @@ func Run() {
 		}
 	}()
 	// getCourseDataByName(client, "DZC10_Game_Design_I")
-	getAllCourses(client)
+	// getAllCourses(client)
+	GetTableHeaders(client)
 }
