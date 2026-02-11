@@ -13,7 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
-
 func setupMongoDBClient() *mongo.Client {
 	godotenv.Load(".env")
 	uri := os.Getenv("MONGODB_URI")
@@ -31,7 +30,7 @@ func setupMongoDBClient() *mongo.Client {
 	return client
 }
 
-func RenderTable() string {
+func RenderTable(uniColor lipgloss.Color) string {
 
 	client := setupMongoDBClient()
 	headers := api.GetTableHeaders(client)
@@ -48,8 +47,8 @@ func RenderTable() string {
 
 	t := table.New().
 		Border(lipgloss.NormalBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(Purple)).
-		StyleFunc(TableStyleFunc).
+		BorderStyle(lipgloss.NewStyle().Foreground(uniColor)).
+		StyleFunc(TableStyleFunc(uniColor)).
 		Headers(headers...).
 		Rows(rows...)
 

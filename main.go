@@ -13,9 +13,10 @@ import (
 
 func main() {
 	api.Run()
-	fmt.Println(tui.RenderTable())
-	p := tea.NewProgram(picker.InitialModel())
 
+	tableStr := tui.RenderTable(tui.DefaultColor)
+
+	p := tea.NewProgram(picker.InitialModel(tableStr))
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)

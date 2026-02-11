@@ -6,6 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"UniGrades/internal/tui"
 	"UniGrades/internal/university"
 )
 
@@ -13,12 +14,14 @@ type Model struct {
 	choices  []string
 	cursor   int
 	selected map[int]struct{}
+	tableStr string
 }
 
-func InitialModel() Model {
+func InitialModel(tableStr string) Model {
 	return Model{
 		choices:  university.Names(),
 		selected: make(map[int]struct{}),
+		tableStr: tableStr,
 	}
 }
 
@@ -49,13 +52,24 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			_, ok := m.selected[m.cursor]
 			if ok {
 				delete(m.selected, m.cursor)
+				m.tableStr = tui.RenderTable(tui.DefaultColor)
 			} else {
-				m.selected[m.cursor] = struct{}{}
+				m.selected = map[int]struct{}{m.cursor: {}}
+				color := uniColors[m.choices[m.cursor]]
+				m.tableStr = tui.RenderTable(color)
 			}
 		}
 	}
 
 	return m, nil
+}
+
+// SelectedUniversity returns the name of the selected university, or "" if none.
+func (m Model) SelectedUniversity() string {
+	for i := range m.selected {
+		return m.choices[i]
+	}
+	return ""
 }
 
 var uniColors = university.ColorMap()
@@ -77,6 +91,7 @@ func (m Model) View() string {
 		style := lipgloss.NewStyle().Foreground(uniColors[choice])
 		s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, style.Render(choice))
 	}
+	s += "\n" + m.tableStr + "\n"
 
 	s += "\nPress Q or Ctrl + C to quit.\n"
 
