@@ -12,6 +12,7 @@ import (
 )
 
 func main() {
+	fmt.Println(tui.RenderTitle())
 	api.Run()
 
 	tableStr := tui.RenderTable(tui.DefaultColor)

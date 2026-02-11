@@ -75,7 +75,7 @@ func (m Model) SelectedUniversity() string {
 var uniColors = university.ColorMap()
 
 func (m Model) View() string {
-	s := "Select university: \n\n"
+	s := "\n\nSelect university: \n\n"
 
 	for i, choice := range m.choices {
 		cursor := " "
