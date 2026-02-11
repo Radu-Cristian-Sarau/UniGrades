@@ -13,6 +13,26 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
+func getAllCourses(client *mongo.Client) {
+	coll := client.Database("CourseInfo").Collection("TUe")
+	cursor, err := coll.Find(context.TODO(), bson.D{})
+	if err != nil {
+		panic(err)
+	}
+	defer cursor.Close(context.TODO())
+
+	var results []bson.M
+	if err := cursor.All(context.TODO(), &results); err != nil {
+		panic(err)
+	}
+
+	jsonData, err := json.MarshalIndent(results, "", "    ")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%s\n", jsonData)
+}
+
 func getCourseDataByName(client *mongo.Client, name string) {
 	coll := client.Database("CourseInfo").Collection("TUe")
 	var result bson.M
@@ -51,5 +71,6 @@ func Run() {
 			panic(err)
 		}
 	}()
-	getCourseDataByName(client, "DZC10_Game_Design_I")
+	// getCourseDataByName(client, "DZC10_Game_Design_I")
+	getAllCourses(client)
 }
