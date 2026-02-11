@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"os"
 
-	tea "github.com/charmbracelet/bubbletea"
-
+	"UniGrades/internal/api"
 	"UniGrades/internal/screens/picker"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func main() {
+	api.Run()
 	p := tea.NewProgram(picker.InitialModel())
 
 	if _, err := p.Run(); err != nil {
