@@ -17,6 +17,7 @@ type Model struct {
 	selected map[int]struct{}
 	tableStr string
 	avgStr   string
+	ectsStr  string
 	headers  []string
 	courses  []bson.M
 }
@@ -24,11 +25,13 @@ type Model struct {
 func InitialModel(headers []string, courses []bson.M) Model {
 	tableStr := tui.RenderTable(tui.DefaultColor, headers, courses)
 	avgStr := tui.RenderAverageGrades(tui.DefaultColor, courses)
+	ectsStr := tui.RenderECTS(tui.DefaultColor, courses)
 	return Model{
 		choices:  university.Names(),
 		selected: make(map[int]struct{}),
 		tableStr: tableStr,
 		avgStr:   avgStr,
+		ectsStr:  ectsStr,
 		headers:  headers,
 		courses:  courses,
 	}
@@ -42,7 +45,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "q":
+		case "ctrl+c":
 			return m, tea.Quit
 
 		case "up", "k":
@@ -63,11 +66,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				delete(m.selected, m.cursor)
 				m.tableStr = tui.RenderTable(tui.DefaultColor, m.headers, m.courses)
 				m.avgStr = tui.RenderAverageGrades(tui.DefaultColor, m.courses)
+				m.ectsStr = tui.RenderECTS(tui.DefaultColor, m.courses)
 			} else {
 				m.selected = map[int]struct{}{m.cursor: {}}
 				color := uniColors[m.choices[m.cursor]]
 				m.tableStr = tui.RenderTable(color, m.headers, m.courses)
 				m.avgStr = tui.RenderAverageGrades(color, m.courses)
+				m.ectsStr = tui.RenderECTS(color, m.courses)
 			}
 		}
 	}
@@ -104,8 +109,9 @@ func (m Model) View() string {
 	}
 	s += "\n" + m.tableStr + "\n"
 	s += "\n" + m.avgStr + "\n"
+	s += "\n" + m.ectsStr + "\n"
 
-	s += "\nPress Q or Ctrl + C to quit.\n"
+	s += "\nPress Ctrl + C to quit.\n"
 
 	return s
 }
