@@ -27,3 +27,20 @@ func TotalECTS(ects []float64) float64 {
 	}
 	return totalECTS
 }
+
+func TotalECTSPerYear(ects []float64, years []int) map[int]float64 {
+	yearECTS := make(map[int][]float64)
+	for i, ects := range ects {
+		year := years[i]
+		yearECTS[year] = append(yearECTS[year], ects)
+	}
+	totalPerYear := make(map[int]float64)
+	for year, ects := range yearECTS {
+		sum := 0.0
+		for _, e := range ects {
+			sum += e
+		}
+		totalPerYear[year] = sum
+	}
+	return totalPerYear
+}

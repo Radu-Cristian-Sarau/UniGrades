@@ -39,16 +39,3 @@ func AverageGradePerYear(grades []float64, years []int) map[int]float64 {
 	}
 	return avgPerYear
 }
-
-func AverageECTSPerYear(ects []float64, years []int) map[int]float64 {
-	yearECTS := make(map[int][]float64)
-	for i, ects := range ects {
-		year := years[i]
-		yearECTS[year] = append(yearECTS[year], ects)
-	}
-	avgPerYear := make(map[int]float64)
-	for year, ects := range yearECTS {
-		avgPerYear[year] = Average(ects)
-	}
-	return avgPerYear
-}
