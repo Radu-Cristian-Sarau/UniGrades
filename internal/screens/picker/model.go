@@ -113,12 +113,17 @@ func (m Model) View() string {
 		style := lipgloss.NewStyle().Foreground(uniColors[choice])
 		s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, style.Render(choice))
 	}
-	s += "\n" + m.tableStr + "\n"
-	s += "\n" + m.avgStr + "\n"
-	s += "\n" + m.avgPerYearStr + "\n"
-	s += "\n" + m.avgECTSPerYearStr + "\n"
-	s += "\n" + m.ectsStr + "\n"
 
+	gap := "   "
+
+	// Right column: average grades table, total ECTS bar, then bar charts side by side
+	charts := lipgloss.JoinHorizontal(lipgloss.Top, m.avgPerYearStr, gap, m.avgECTSPerYearStr)
+	rightCol := lipgloss.JoinVertical(lipgloss.Left, m.avgStr, "", m.ectsStr, "", charts)
+
+	// Full layout: course table (left) | right column
+	grid := lipgloss.JoinHorizontal(lipgloss.Top, m.tableStr, gap, rightCol)
+
+	s += "\n" + grid + "\n"
 	s += "\nPress Ctrl + C to quit.\n"
 
 	return s
