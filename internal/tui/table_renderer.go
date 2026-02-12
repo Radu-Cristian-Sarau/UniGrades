@@ -1,40 +1,14 @@
 package tui
 
 import (
-	"UniGrades/internal/api"
 	"fmt"
-	"log"
-	"os"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
-	"github.com/joho/godotenv"
-	"go.mongodb.org/mongo-driver/v2/mongo"
-	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-func setupMongoDBClient() *mongo.Client {
-	godotenv.Load(".env")
-	uri := os.Getenv("MONGODB_URI")
-	docs := "www.mongodb.com/docs/drivers/go/current/"
-	if uri == "" {
-		log.Fatal("Set your 'MONGODB_URI' environment variable. " +
-			"See: " + docs +
-			"usage-examples/#environment-variable")
-	}
-	client, err := mongo.Connect(options.Client().
-		ApplyURI(uri))
-	if err != nil {
-		panic(err)
-	}
-	return client
-}
-
-func RenderTable(uniColor lipgloss.Color) string {
-
-	client := setupMongoDBClient()
-	headers := api.GetTableHeaders(client)
-	courses := api.GetAllCourses(client)
+func RenderTable(uniColor lipgloss.Color, headers []string, courses []bson.M) string {
 
 	rows := make([][]string, 0, len(courses))
 	for _, course := range courses {
