@@ -12,28 +12,31 @@ import (
 )
 
 type Model struct {
-	choices  []string
-	cursor   int
-	selected map[int]struct{}
-	tableStr string
-	avgStr   string
-	ectsStr  string
-	headers  []string
-	courses  []bson.M
+	choices       []string
+	cursor        int
+	selected      map[int]struct{}
+	tableStr      string
+	avgStr        string
+	avgPerYearStr string
+	ectsStr       string
+	headers       []string
+	courses       []bson.M
 }
 
 func InitialModel(headers []string, courses []bson.M) Model {
 	tableStr := tui.RenderTable(tui.DefaultColor, headers, courses)
 	avgStr := tui.RenderAverageGrades(tui.DefaultColor, courses)
+	avgPerYearStr := tui.RenderAverageGradesPerYear(courses)
 	ectsStr := tui.RenderECTS(tui.DefaultColor, courses)
 	return Model{
-		choices:  university.Names(),
-		selected: make(map[int]struct{}),
-		tableStr: tableStr,
-		avgStr:   avgStr,
-		ectsStr:  ectsStr,
-		headers:  headers,
-		courses:  courses,
+		choices:       university.Names(),
+		selected:      make(map[int]struct{}),
+		tableStr:      tableStr,
+		avgStr:        avgStr,
+		avgPerYearStr: avgPerYearStr,
+		ectsStr:       ectsStr,
+		headers:       headers,
+		courses:       courses,
 	}
 }
 
@@ -109,6 +112,7 @@ func (m Model) View() string {
 	}
 	s += "\n" + m.tableStr + "\n"
 	s += "\n" + m.avgStr + "\n"
+	s += "\n" + m.avgPerYearStr + "\n"
 	s += "\n" + m.ectsStr + "\n"
 
 	s += "\nPress Ctrl + C to quit.\n"
