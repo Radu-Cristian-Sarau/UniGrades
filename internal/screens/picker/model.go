@@ -27,8 +27,8 @@ type Model struct {
 func InitialModel(headers []string, courses []bson.M) Model {
 	tableStr := tui.RenderTable(tui.DefaultColor, headers, courses)
 	avgStr := tui.RenderAverageGrades(tui.DefaultColor, courses)
-	avgPerYearStr := tui.RenderAverageGradesPerYear(courses)
-	avgECTSPerYearStr := tui.RenderTotalECTSPerYear(courses)
+	avgPerYearStr := tui.RenderAverageGradesPerYear(tui.DefaultColor, courses)
+	avgECTSPerYearStr := tui.RenderTotalECTSPerYear(tui.DefaultColor, courses)
 	ectsStr := tui.RenderECTS(tui.DefaultColor, courses)
 	return Model{
 		choices:           university.Names(),
@@ -72,12 +72,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				delete(m.selected, m.cursor)
 				m.tableStr = tui.RenderTable(tui.DefaultColor, m.headers, m.courses)
 				m.avgStr = tui.RenderAverageGrades(tui.DefaultColor, m.courses)
+				m.avgPerYearStr = tui.RenderAverageGradesPerYear(tui.DefaultColor, m.courses)
+				m.avgECTSPerYearStr = tui.RenderTotalECTSPerYear(tui.DefaultColor, m.courses)
 				m.ectsStr = tui.RenderECTS(tui.DefaultColor, m.courses)
 			} else {
 				m.selected = map[int]struct{}{m.cursor: {}}
 				color := uniColors[m.choices[m.cursor]]
 				m.tableStr = tui.RenderTable(color, m.headers, m.courses)
 				m.avgStr = tui.RenderAverageGrades(color, m.courses)
+				m.avgPerYearStr = tui.RenderAverageGradesPerYear(color, m.courses)
+				m.avgECTSPerYearStr = tui.RenderTotalECTSPerYear(color, m.courses)
 				m.ectsStr = tui.RenderECTS(color, m.courses)
 			}
 		}
@@ -116,12 +120,14 @@ func (m Model) View() string {
 
 	gap := "   "
 
-	// Right column: average grades table, total ECTS bar, then bar charts side by side
-	charts := lipgloss.JoinHorizontal(lipgloss.Top, m.avgPerYearStr, gap, m.avgECTSPerYearStr)
-	rightCol := lipgloss.JoinVertical(lipgloss.Left, m.avgStr, "", m.ectsStr, "", charts)
+	// Second column: average grades, average grades per year chart, total ECTS bar beneath
+	col2 := lipgloss.JoinVertical(lipgloss.Left, m.avgStr, m.avgPerYearStr, "", m.ectsStr)
 
-	// Full layout: course table (left) | right column
-	grid := lipgloss.JoinHorizontal(lipgloss.Top, m.tableStr, gap, rightCol)
+	// Fourth column: total ECTS per year chart
+	col3 := m.avgECTSPerYearStr
+
+	// Full layout: course table | stats + avg chart + ECTS bar | (empty) | ECTS/year chart
+	grid := lipgloss.JoinHorizontal(lipgloss.Top, m.tableStr, gap, col2, gap, col3)
 
 	s += "\n" + grid + "\n"
 	s += "\nPress Ctrl + C to quit.\n"

@@ -6,7 +6,7 @@ import (
 
 const (
 	ECTSMaxValue  = 180.0
-	ECTSBarWidth  = 90
+	ECTSBarWidth  = 44.0
 	ECTSBarHeight = 1
 )
 

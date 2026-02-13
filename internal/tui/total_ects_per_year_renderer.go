@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/NimbleMarkets/ntcharts/barchart"
+	"github.com/charmbracelet/lipgloss"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -15,7 +16,7 @@ const (
 	TotalECTSChartMax    = 75.0 // Max is actually 60, but this gives the bars some room
 )
 
-func RenderTotalECTSPerYear(courses []bson.M) string {
+func RenderTotalECTSPerYear(uniColor lipgloss.Color, courses []bson.M) string {
 	ects, years := computations.ParseECTSAndYears(courses)
 
 	totalPerYear := computations.TotalECTSPerYear(ects, years)
@@ -40,9 +41,21 @@ func RenderTotalECTSPerYear(courses []bson.M) string {
 	// Build header with per-year totals
 	header := "Total ECTS Per Year\n"
 	for _, y := range sortedYears {
-		header += fmt.Sprintf("  Year %d: %.0f", y, totalPerYear[y])
+		if y > 1 {
+			header += fmt.Sprintf("  Year %d: %.0f", y, totalPerYear[y])
+		} else {
+			header += fmt.Sprintf("Year %d: %.0f", y, totalPerYear[y])
+		}
+
 	}
 	header += "\n"
 
-	return header + bc.View()
+	content := header + bc.View()
+
+	box := lipgloss.NewStyle().
+		Border(lipgloss.NormalBorder()).
+		BorderForeground(uniColor).
+		Padding(0, 1)
+
+	return box.Render(content)
 }

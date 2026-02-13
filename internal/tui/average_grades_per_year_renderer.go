@@ -27,7 +27,7 @@ func barStyleForYear(index int) lipgloss.Style {
 	return lipgloss.NewStyle().Foreground(c).Background(c)
 }
 
-func RenderAverageGradesPerYear(courses []bson.M) string {
+func RenderAverageGradesPerYear(uniColor lipgloss.Color, courses []bson.M) string {
 	grades, years := computations.ParseGradesAndYears(courses)
 
 	avgPerYear := computations.AverageGradePerYear(grades, years)
@@ -52,9 +52,20 @@ func RenderAverageGradesPerYear(courses []bson.M) string {
 	// Build header with per-year averages
 	header := "Average Grades Per Year\n"
 	for _, y := range sortedYears {
-		header += fmt.Sprintf("  Year %d: %.2f", y, avgPerYear[y])
+		if y > 1 {
+			header += fmt.Sprintf("  Year %d: %.2f", y, avgPerYear[y])
+		} else {
+			header += fmt.Sprintf("Year %d: %.2f", y, avgPerYear[y])
+		}
 	}
 	header += "\n"
 
-	return header + bc.View()
+	content := header + bc.View()
+
+	box := lipgloss.NewStyle().
+		Border(lipgloss.NormalBorder()).
+		BorderForeground(uniColor).
+		Padding(0, 1)
+
+	return box.Render(content)
 }

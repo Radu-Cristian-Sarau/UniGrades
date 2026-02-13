@@ -20,7 +20,7 @@ func RenderECTS(uniColor lipgloss.Color, courses []bson.M) string {
 	}
 
 	d1 := barchart.BarData{
-		Label: "Total ECTS Obtained",
+		Label: "ECTS",
 		Values: []barchart.BarValue{
 			{"ECTS", totalECTS, ECTSBarStyle(uniColor)},
 			{"Remaining", remaining, ECTSRemainingStyle()},
@@ -31,9 +31,8 @@ func RenderECTS(uniColor lipgloss.Color, courses []bson.M) string {
 	bc.PushAll([]barchart.BarData{d1})
 	bc.Draw()
 
+	header := fmt.Sprintf("Total ECTS")
 	scaleLine := buildScaleLine(totalECTS)
-
-	header := fmt.Sprintf("Total ECTS: %.0f / %.0f", totalECTS, ECTSMaxValue)
 	return header + "\n" + bc.View() + "\n" + scaleLine
 }
 
@@ -54,17 +53,20 @@ func buildScaleLine(totalECTS float64) string {
 		scale[i] = ' '
 	}
 
+	// Place "0" at the start
+	if ectsPos > 2 {
+		scale[0] = '0'
+	}
+
+	// Place current ECTS value
 	if ectsPos+len(ectsLabel) <= ECTSBarWidth {
 		copy(scale[ectsPos:], ectsLabel)
 	}
 
+	// Place max value at the end
 	maxPos := ECTSBarWidth - len(maxLabel)
 	if maxPos > ectsPos+len(ectsLabel)+1 {
 		copy(scale[maxPos:], maxLabel)
-	}
-
-	if ectsPos > 2 {
-		scale[0] = '0'
 	}
 
 	return strings.TrimRight(string(scale), " ")
