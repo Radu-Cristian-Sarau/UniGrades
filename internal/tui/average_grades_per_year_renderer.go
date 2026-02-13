@@ -4,7 +4,6 @@ import (
 	"UniGrades/internal/computations"
 	"fmt"
 	"sort"
-	"strconv"
 
 	"github.com/NimbleMarkets/ntcharts/barchart"
 	"github.com/charmbracelet/lipgloss"
@@ -29,25 +28,7 @@ func barStyleForYear(index int) lipgloss.Style {
 }
 
 func RenderAverageGradesPerYear(courses []bson.M) string {
-	var grades []float64
-	var years []int
-
-	for _, course := range courses {
-		gradeStr := fmt.Sprintf("%v", course["Grade"])
-		yearStr := fmt.Sprintf("%v", course["Year"])
-
-		grade, err := strconv.ParseFloat(gradeStr, 64)
-		if err != nil {
-			continue
-		}
-		year, err := strconv.Atoi(yearStr)
-		if err != nil {
-			continue
-		}
-
-		grades = append(grades, grade)
-		years = append(years, year)
-	}
+	grades, years := computations.ParseGradesAndYears(courses)
 
 	avgPerYear := computations.AverageGradePerYear(grades, years)
 

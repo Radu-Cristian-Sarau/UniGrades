@@ -1,5 +1,36 @@
 package computations
 
+import (
+	"fmt"
+	"strconv"
+
+	"go.mongodb.org/mongo-driver/v2/bson"
+)
+
+func ParseGradesAndYears(courses []bson.M) ([]float64, []int) {
+	var grades []float64
+	var years []int
+
+	for _, course := range courses {
+		gradeStr := fmt.Sprintf("%v", course["Grade"])
+		yearStr := fmt.Sprintf("%v", course["Year"])
+
+		grade, err := strconv.ParseFloat(gradeStr, 64)
+		if err != nil {
+			continue
+		}
+		year, err := strconv.Atoi(yearStr)
+		if err != nil {
+			continue
+		}
+
+		grades = append(grades, grade)
+		years = append(years, year)
+	}
+
+	return grades, years
+}
+
 func Average(nums []float64) float64 {
 	if len(nums) == 0 {
 		return 0
