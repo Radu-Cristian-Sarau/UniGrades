@@ -6,7 +6,6 @@ import (
 	"sort"
 
 	"github.com/NimbleMarkets/ntcharts/barchart"
-	"github.com/charmbracelet/lipgloss"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -28,25 +27,12 @@ func RenderTotalECTSPerYear(courses []bson.M) string {
 	}
 	sort.Ints(sortedYears)
 
-	// Build bar data for each year with fixed colors
-	axisStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
-	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
-
-	var barData []barchart.BarData
-	for i, y := range sortedYears {
-		total := totalPerYear[y]
-		barData = append(barData, barchart.BarData{
-			Label: fmt.Sprintf("Y%d", y),
-			Values: []barchart.BarValue{
-				{Name: fmt.Sprintf("Year %d", y), Value: total, Style: barStyleForYear(i)},
-			},
-		})
-	}
+	barData := BuildBarDataPerYear(sortedYears, totalPerYear)
 
 	bc := barchart.New(TotalECTSChartWidth, TotalECTSChartHeight,
 		barchart.WithMaxValue(TotalECTSChartMax),
 		barchart.WithNoAutoMaxValue(),
-		barchart.WithStyles(axisStyle, labelStyle),
+		barchart.WithStyles(BarAxisStyle, BarLabelStyle),
 		barchart.WithDataSet(barData),
 	)
 	bc.Draw()

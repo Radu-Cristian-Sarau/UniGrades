@@ -39,25 +39,12 @@ func RenderAverageGradesPerYear(courses []bson.M) string {
 	}
 	sort.Ints(sortedYears)
 
-	// Build bar data for each year with fixed colors
-	axisStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
-	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
-
-	var barData []barchart.BarData
-	for i, y := range sortedYears {
-		avg := avgPerYear[y]
-		barData = append(barData, barchart.BarData{
-			Label: fmt.Sprintf("Y%d", y),
-			Values: []barchart.BarValue{
-				{Name: fmt.Sprintf("Year %d", y), Value: avg, Style: barStyleForYear(i)},
-			},
-		})
-	}
+	barData := BuildBarDataPerYear(sortedYears, avgPerYear)
 
 	bc := barchart.New(AvgGradesChartWidth, AvgGradesChartHeight,
 		barchart.WithMaxValue(AvgGradesMaxValue),
 		barchart.WithNoAutoMaxValue(),
-		barchart.WithStyles(axisStyle, labelStyle),
+		barchart.WithStyles(BarAxisStyle, BarLabelStyle),
 		barchart.WithDataSet(barData),
 	)
 	bc.Draw()
