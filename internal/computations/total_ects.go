@@ -28,6 +28,30 @@ func TotalECTS(ects []float64) float64 {
 	return totalECTS
 }
 
+func ParseECTSAndYears(courses []bson.M) ([]float64, []int) {
+	var ects []float64
+	var years []int
+
+	for _, course := range courses {
+		ectsStr := fmt.Sprintf("%v", course["ECTS"])
+		yearStr := fmt.Sprintf("%v", course["Year"])
+
+		e, err := strconv.ParseFloat(ectsStr, 64)
+		if err != nil {
+			continue
+		}
+		year, err := strconv.Atoi(yearStr)
+		if err != nil {
+			continue
+		}
+
+		ects = append(ects, e)
+		years = append(years, year)
+	}
+
+	return ects, years
+}
+
 func TotalECTSPerYear(ects []float64, years []int) map[int]float64 {
 	yearECTS := make(map[int][]float64)
 	for i, ects := range ects {

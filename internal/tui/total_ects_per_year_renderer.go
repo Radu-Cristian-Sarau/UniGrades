@@ -4,7 +4,6 @@ import (
 	"UniGrades/internal/computations"
 	"fmt"
 	"sort"
-	"strconv"
 
 	"github.com/NimbleMarkets/ntcharts/barchart"
 	"github.com/charmbracelet/lipgloss"
@@ -14,29 +13,11 @@ import (
 const (
 	TotalECTSChartWidth  = 40
 	TotalECTSChartHeight = 15
-	TotalECTSChartMax    = 75.0
+	TotalECTSChartMax    = 75.0 // Max is actually 60, but this gives the bars some room
 )
 
 func RenderTotalECTSPerYear(courses []bson.M) string {
-	var ects []float64
-	var years []int
-
-	for _, course := range courses {
-		ectsStr := fmt.Sprintf("%v", course["ECTS"])
-		yearStr := fmt.Sprintf("%v", course["Year"])
-
-		e, err := strconv.ParseFloat(ectsStr, 64)
-		if err != nil {
-			continue
-		}
-		year, err := strconv.Atoi(yearStr)
-		if err != nil {
-			continue
-		}
-
-		ects = append(ects, e)
-		years = append(years, year)
-	}
+	ects, years := computations.ParseECTSAndYears(courses)
 
 	totalPerYear := computations.TotalECTSPerYear(ects, years)
 
