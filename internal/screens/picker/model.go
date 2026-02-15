@@ -22,6 +22,8 @@ type Model struct {
 	ectsStr           string
 	headers           []string
 	courses           []bson.M
+	termWidth         int
+	termHeight        int
 }
 
 func InitialModel(headers []string, courses []bson.M) Model {
@@ -40,6 +42,8 @@ func InitialModel(headers []string, courses []bson.M) Model {
 		ectsStr:           ectsStr,
 		headers:           headers,
 		courses:           courses,
+		termWidth:         80,
+		termHeight:        24,
 	}
 }
 
@@ -49,6 +53,10 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.termWidth = msg.Width
+		m.termHeight = msg.Height
+		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
@@ -118,6 +126,12 @@ func (m Model) View() string {
 		s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, style.Render(choice))
 	}
 
+	// Get selected university color
+	uniColor := tui.DefaultColor
+	for i := range m.selected {
+		uniColor = uniColors[m.choices[i]]
+	}
+
 	gap := "   "
 
 	// Second column: average grades, average grades per year chart, total ECTS bar beneath
@@ -125,9 +139,20 @@ func (m Model) View() string {
 
 	// Third column: total ECTS per year chart
 	col3 := lipgloss.JoinVertical(lipgloss.Left, m.avgECTSPerYearStr, "", m.ectsStr)
+
 	// Full layout: course table | stats + avg chart + ECTS bar | ECTS/year chart
 	grid := lipgloss.JoinHorizontal(lipgloss.Top, m.tableStr, gap, col2, gap, col3)
 
+	// Create text box with width matching the grid
+	gridWidth := lipgloss.Width(grid)
+	textBox := lipgloss.NewStyle().
+		Border(lipgloss.NormalBorder()).
+		BorderForeground(uniColor).
+		Padding(0, 1).
+		Width(gridWidth).
+		Render("Type your notes here...")
+
+	s += "\n" + textBox + "\n"
 	s += "\n" + grid + "\n"
 	s += "\nPress Ctrl + C to quit.\n"
 
