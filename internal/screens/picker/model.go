@@ -2,17 +2,15 @@ package picker
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 
 	textinput "github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/table"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 
 	"UniGrades/internal/api"
+	"UniGrades/internal/screens/grades"
 	"UniGrades/internal/tui"
 	"UniGrades/internal/university"
 )
@@ -25,22 +23,22 @@ const (
 )
 
 type Model struct {
-	choices           []string
-	cursor            int
-	selected          map[int]struct{}
-	tableStr          string
-	avgStr            string
-	avgPerYearStr     string
-	avgECTSPerYearStr string
-	ectsStr           string
-	headers           []string
-	courses           []bson.M
-	termWidth         int
-	termHeight        int
-	screen            Screen
-	textInput         textinput.Model
-	mongoClient       *mongo.Client
-	statusMessage     string
+	Choices           []string
+	Cursor            int
+	Selected          map[int]struct{}
+	TableStr          string
+	AvgStr            string
+	AvgPerYearStr     string
+	AvgECTSPerYearStr string
+	EctsStr           string
+	Headers           []string
+	Courses           []bson.M
+	TermWidth         int
+	TermHeight        int
+	Screen            Screen
+	TextInput         textinput.Model
+	MongoClient       *mongo.Client
+	StatusMessage     string
 }
 
 func InitialModel(headers []string, courses []bson.M, client *mongo.Client) Model {
@@ -54,21 +52,21 @@ func InitialModel(headers []string, courses []bson.M, client *mongo.Client) Mode
 	avgECTSPerYearStr := tui.RenderTotalECTSPerYear(tui.DefaultColor, courses)
 	ectsStr := tui.RenderECTS(tui.DefaultColor, courses)
 	return Model{
-		choices:           university.Names(),
-		selected:          make(map[int]struct{}),
-		tableStr:          tableStr,
-		avgStr:            avgStr,
-		avgPerYearStr:     avgPerYearStr,
-		avgECTSPerYearStr: avgECTSPerYearStr,
-		ectsStr:           ectsStr,
-		headers:           headers,
-		courses:           courses,
-		termWidth:         80,
-		termHeight:        24,
-		screen:            PickerScreen,
-		textInput:         ti,
-		mongoClient:       client,
-		statusMessage:     "",
+		Choices:           university.Names(),
+		Selected:          make(map[int]struct{}),
+		TableStr:          tableStr,
+		AvgStr:            avgStr,
+		AvgPerYearStr:     avgPerYearStr,
+		AvgECTSPerYearStr: avgECTSPerYearStr,
+		EctsStr:           ectsStr,
+		Headers:           headers,
+		Courses:           courses,
+		TermWidth:         80,
+		TermHeight:        24,
+		Screen:            PickerScreen,
+		TextInput:         ti,
+		MongoClient:       client,
+		StatusMessage:     "",
 	}
 }
 
@@ -79,8 +77,8 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.termWidth = msg.Width
-		m.termHeight = msg.Height
+		m.TermWidth = msg.Width
+		m.TermHeight = msg.Height
 		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -88,70 +86,59 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case "ctrl+q":
-			if m.screen == DataScreen {
-				m.screen = PickerScreen
-				m.selected = make(map[int]struct{})
-				m.textInput.SetValue("")
-				m.statusMessage = ""
+			if m.Screen == DataScreen {
+				m.Screen = PickerScreen
+				m.Selected = make(map[int]struct{})
+				m.TextInput.SetValue("")
+				m.StatusMessage = ""
 				return m, nil
 			}
 
 		case "up", "k":
-			if m.screen == PickerScreen {
-				m.cursor--
-				if m.cursor < 0 {
-					m.cursor = len(m.choices) - 1
+			if m.Screen == PickerScreen {
+				m.Cursor--
+				if m.Cursor < 0 {
+					m.Cursor = len(m.Choices) - 1
 				}
 			}
 
 		case "down", "j":
-			if m.screen == PickerScreen {
-				m.cursor++
-				if m.cursor >= len(m.choices) {
-					m.cursor = 0
+			if m.Screen == PickerScreen {
+				m.Cursor++
+				if m.Cursor >= len(m.Choices) {
+					m.Cursor = 0
 				}
 			}
 
 		case "enter":
-			if m.screen == PickerScreen {
-				_, ok := m.selected[m.cursor]
+			if m.Screen == PickerScreen {
+				_, ok := m.Selected[m.Cursor]
 				if ok {
-					delete(m.selected, m.cursor)
-					m.tableStr = tui.RenderTable(tui.DefaultColor, m.headers, m.courses)
-					m.avgStr = tui.RenderAverageGrades(tui.DefaultColor, m.courses)
-					m.avgPerYearStr = tui.RenderAverageGradesPerYear(tui.DefaultColor, m.courses)
-					m.avgECTSPerYearStr = tui.RenderTotalECTSPerYear(tui.DefaultColor, m.courses)
-					m.ectsStr = tui.RenderECTS(tui.DefaultColor, m.courses)
+					delete(m.Selected, m.Cursor)
+					m.TableStr = tui.RenderTable(tui.DefaultColor, m.Headers, m.Courses)
+					m.AvgStr = tui.RenderAverageGrades(tui.DefaultColor, m.Courses)
+					m.AvgPerYearStr = tui.RenderAverageGradesPerYear(tui.DefaultColor, m.Courses)
+					m.AvgECTSPerYearStr = tui.RenderTotalECTSPerYear(tui.DefaultColor, m.Courses)
+					m.EctsStr = tui.RenderECTS(tui.DefaultColor, m.Courses)
 				} else {
-					m.selected = map[int]struct{}{m.cursor: {}}
-					color := uniColors[m.choices[m.cursor]]
-					m.tableStr = tui.RenderTable(color, m.headers, m.courses)
-					m.avgStr = tui.RenderAverageGrades(color, m.courses)
-					m.avgPerYearStr = tui.RenderAverageGradesPerYear(color, m.courses)
-					m.avgECTSPerYearStr = tui.RenderTotalECTSPerYear(color, m.courses)
-					m.ectsStr = tui.RenderECTS(color, m.courses)
-					m.screen = DataScreen
+					m.Selected = map[int]struct{}{m.Cursor: {}}
+					color := uniColors[m.Choices[m.Cursor]]
+					m.TableStr = tui.RenderTable(color, m.Headers, m.Courses)
+					m.AvgStr = tui.RenderAverageGrades(color, m.Courses)
+					m.AvgPerYearStr = tui.RenderAverageGradesPerYear(color, m.Courses)
+					m.AvgECTSPerYearStr = tui.RenderTotalECTSPerYear(color, m.Courses)
+					m.EctsStr = tui.RenderECTS(color, m.Courses)
+					m.Screen = DataScreen
 				}
-			} else if m.screen == DataScreen {
-				// Handle enter in text input - process commands
-				input := m.textInput.Value()
-				if strings.HasPrefix(input, "/add ") {
-					m.processAddCommand(input)
-					m.textInput.SetValue("")
-				} else if strings.HasPrefix(input, "/delete ") {
-					m.processDeleteCommand(input)
-					m.textInput.SetValue("")
-				} else if strings.HasPrefix(input, "/edit ") {
-					m.processEditCommand(input)
-					m.textInput.SetValue("")
-				}
+			} else if m.Screen == DataScreen {
+				grades.HandleDataScreenInput(&m)
 			}
 		}
 
 		// Handle text input when on DataScreen
-		if m.screen == DataScreen {
+		if m.Screen == DataScreen {
 			var cmd tea.Cmd
-			m.textInput, cmd = m.textInput.Update(msg)
+			m.TextInput, cmd = m.TextInput.Update(msg)
 			return m, cmd
 		}
 	}
@@ -159,154 +146,131 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// processAddCommand parses and executes the /add command
-func (m *Model) processAddCommand(input string) {
-	// Parse: /add Name Year Grade ECTS
-	parts := strings.Fields(input)
-	if len(parts) < 5 {
-		m.statusMessage = "Invalid format. Use: /add Name Year Grade ECTS"
-		return
-	}
-
-	name := parts[1]
-	year, errYear := strconv.Atoi(parts[2])
-	grade, errGrade := strconv.ParseFloat(parts[3], 64)
-	ects, errEcts := strconv.Atoi(parts[4])
-
-	if errYear != nil || errGrade != nil || errEcts != nil {
-		m.statusMessage = "Error: Year and ECTS must be integers, Grade must be a number"
-		return
-	}
-
-	// Create course and add to database
-	course := api.Course{
-		Name:  name,
-		Year:  year,
-		Grade: grade,
-		ECTS:  ects,
-	}
-
-	id, err := api.AddCourse(m.mongoClient, course)
-	if err != nil {
-		m.statusMessage = fmt.Sprintf("Error adding course: %v", err)
-		return
-	}
-
-	// Refresh course list
-	m.courses = api.GetAllCourses(m.mongoClient)
-	m.refreshCharts()
-
-	m.statusMessage = fmt.Sprintf("✓ Course '%s' added successfully (ID: %s)", name, id)
-}
-
-// processDeleteCommand parses and executes the /delete command
-func (m *Model) processDeleteCommand(input string) {
-	// Parse: /delete CourseName
-	parts := strings.Fields(input)
-	if len(parts) < 2 {
-		m.statusMessage = "Invalid format. Use: /delete CourseName"
-		return
-	}
-
-	courseName := parts[1]
-
-	err := api.DeleteCourse(m.mongoClient, courseName)
-	if err != nil {
-		m.statusMessage = fmt.Sprintf("Error deleting course: %v", err)
-		return
-	}
-
-	// Refresh course list
-	m.courses = api.GetAllCourses(m.mongoClient)
-	m.refreshCharts()
-
-	m.statusMessage = fmt.Sprintf("✓ Course '%s' deleted successfully", courseName)
-}
-
-// processEditCommand parses and executes the /edit command
-// Format: /edit CourseName Field NewValue
-// Example: /edit Calculus Grade 9.5
-func (m *Model) processEditCommand(input string) {
-	// Parse: /edit CourseName Field NewValue
-	parts := strings.Fields(input)
-	if len(parts) < 4 {
-		m.statusMessage = "Invalid format. Use: /edit CourseName Field NewValue (e.g., /edit Calculus Grade 9.5)"
-		return
-	}
-
-	courseName := parts[1]
-	field := parts[2]
-	newValue := parts[3]
-
-	// Validate field name
-	validFields := map[string]bool{"Name": true, "Year": true, "Grade": true, "ECTS": true}
-	if !validFields[field] {
-		m.statusMessage = "Invalid field. Valid fields are: Name, Year, Grade, ECTS"
-		return
-	}
-
-	err := api.UpdateCourse(m.mongoClient, courseName, field, newValue)
-	if err != nil {
-		m.statusMessage = fmt.Sprintf("Error updating course: %v", err)
-		return
-	}
-
-	// Refresh course list
-	m.courses = api.GetAllCourses(m.mongoClient)
-	m.refreshCharts()
-
-	m.statusMessage = fmt.Sprintf("✓ Course '%s' field '%s' updated to '%v'", courseName, field, newValue)
-}
-
-// refreshCharts updates all the chart displays
-func (m *Model) refreshCharts() {
-	selectedUni := ""
-	for i := range m.selected {
-		selectedUni = m.choices[i]
-	}
-
-	color := tui.DefaultColor
-	for i := range m.selected {
-		color = uniColors[m.choices[i]]
-	}
-
-	if selectedUni != "TUD" && selectedUni != "TUM" {
-		m.tableStr = tui.RenderTable(color, m.headers, m.courses)
-		m.avgStr = tui.RenderAverageGrades(color, m.courses)
-		m.avgPerYearStr = tui.RenderAverageGradesPerYear(color, m.courses)
-		m.avgECTSPerYearStr = tui.RenderTotalECTSPerYear(color, m.courses)
-		m.ectsStr = tui.RenderECTS(color, m.courses)
-	}
-}
-
 // SelectedUniversity returns the name of the selected university, or "" if none.
 func (m Model) SelectedUniversity() string {
-	for i := range m.selected {
-		return m.choices[i]
+	for i := range m.Selected {
+		return m.Choices[i]
 	}
 	return ""
+}
+
+// Interface methods for grades package - needed to avoid circular imports
+
+// GetMongoClient returns the MongoDB client.
+func (m Model) GetMongoClient() *mongo.Client {
+	return m.MongoClient
+}
+
+// GetSelectedUniversity returns the selected university.
+func (m Model) GetSelectedUniversity() string {
+	return m.SelectedUniversity()
+}
+
+// GetTermWidth returns the terminal width.
+func (m Model) GetTermWidth() int {
+	return m.TermWidth
+}
+
+// GetTableStr returns the rendered table string.
+func (m Model) GetTableStr() string {
+	return m.TableStr
+}
+
+// GetAvgStr returns the rendered average grades string.
+func (m Model) GetAvgStr() string {
+	return m.AvgStr
+}
+
+// GetAvgPerYearStr returns the rendered average grades per year string.
+func (m Model) GetAvgPerYearStr() string {
+	return m.AvgPerYearStr
+}
+
+// GetAvgECTSPerYearStr returns the rendered average ECTS per year string.
+func (m Model) GetAvgECTSPerYearStr() string {
+	return m.AvgECTSPerYearStr
+}
+
+// GetEctsStr returns the rendered ECTS string.
+func (m Model) GetEctsStr() string {
+	return m.EctsStr
+}
+
+// GetTextInputView returns the text input view.
+func (m Model) GetTextInputView() string {
+	return m.TextInput.View()
+}
+
+// GetStatusMessage returns the status message.
+func (m Model) GetStatusMessage() string {
+	return m.StatusMessage
+}
+
+// SetStatusMessage sets the status message.
+func (m *Model) SetStatusMessage(msg string) {
+	m.StatusMessage = msg
+}
+
+// RefreshCourses refreshes the courses from the database.
+func (m *Model) RefreshCourses() {
+	m.Courses = api.GetAllCourses(m.MongoClient)
+}
+
+// RefreshTableStr refreshes the table string with the given color.
+func (m *Model) RefreshTableStr(color lipgloss.Color) {
+	m.TableStr = tui.RenderTable(color, m.Headers, m.Courses)
+}
+
+// RefreshAvgStr refreshes the average grades string with the given color.
+func (m *Model) RefreshAvgStr(color lipgloss.Color) {
+	m.AvgStr = tui.RenderAverageGrades(color, m.Courses)
+}
+
+// RefreshAvgPerYearStr refreshes the average grades per year string with the given color.
+func (m *Model) RefreshAvgPerYearStr(color lipgloss.Color) {
+	m.AvgPerYearStr = tui.RenderAverageGradesPerYear(color, m.Courses)
+}
+
+// RefreshAvgECTSPerYearStr refreshes the average ECTS per year string with the given color.
+func (m *Model) RefreshAvgECTSPerYearStr(color lipgloss.Color) {
+	m.AvgECTSPerYearStr = tui.RenderTotalECTSPerYear(color, m.Courses)
+}
+
+// RefreshEctsStr refreshes the ECTS string with the given color.
+func (m *Model) RefreshEctsStr(color lipgloss.Color) {
+	m.EctsStr = tui.RenderECTS(color, m.Courses)
+}
+
+// GetTextInputValue returns the text input value.
+func (m Model) GetTextInputValue() string {
+	return m.TextInput.Value()
+}
+
+// SetTextInputValue sets the text input value.
+func (m *Model) SetTextInputValue(value string) {
+	m.TextInput.SetValue(value)
 }
 
 var uniColors = university.ColorMap()
 
 func (m Model) View() string {
-	if m.screen == PickerScreen {
+	if m.Screen == PickerScreen {
 		return m.renderPickerScreen()
 	}
-	return m.renderDataScreen()
+	return grades.RenderDataScreen(&m)
 }
 
 func (m Model) renderPickerScreen() string {
 	s := "\n\n\nSelect university:\n\n"
 
-	for i, choice := range m.choices {
+	for i, choice := range m.Choices {
 		cursor := " "
-		if m.cursor == i {
+		if m.Cursor == i {
 			cursor = ">"
 		}
 
 		checked := " "
-		if _, ok := m.selected[i]; ok {
+		if _, ok := m.Selected[i]; ok {
 			checked = "x"
 		}
 
@@ -318,160 +282,9 @@ func (m Model) renderPickerScreen() string {
 
 	// Center the entire picker screen
 	centeredContent := lipgloss.NewStyle().
-		Width(m.termWidth).
+		Width(m.TermWidth).
 		Align(lipgloss.Center).
 		Render(s)
 
 	return "\n" + centeredContent + "\n"
-}
-
-func (m Model) renderDataScreen() string {
-	// Get selected university
-	selectedUni := ""
-	for i := range m.selected {
-		selectedUni = m.choices[i]
-	}
-
-	// Get selected university color
-	uniColor := tui.DefaultColor
-	for i := range m.selected {
-		uniColor = uniColors[m.choices[i]]
-	}
-
-	// Check if data is unavailable for this university
-	if selectedUni == "TUD" || selectedUni == "TUM" {
-		message := fmt.Sprintf("Data unavailable: Studies at %s have not started yet.", selectedUni)
-		msgBox := lipgloss.NewStyle().
-			Border(lipgloss.NormalBorder()).
-			BorderForeground(uniColor).
-			Padding(1, 2).
-			Foreground(lipgloss.Color("243")).
-			Render(message)
-
-		contentStyle := lipgloss.NewStyle().
-			Width(m.termWidth).
-			Align(lipgloss.Center)
-
-		s := "\n" + contentStyle.Render(msgBox) + "\n"
-
-		footerStyle := lipgloss.NewStyle().
-			Width(m.termWidth).
-			Align(lipgloss.Center)
-		s += "\n" + footerStyle.Render("Press Ctrl + Q to go back, Ctrl + C to quit.") + "\n"
-
-		return s
-	}
-
-	gap := "   "
-
-	// Second column: average grades, average grades per year chart, total ECTS bar beneath
-	col2 := lipgloss.JoinVertical(lipgloss.Left, m.avgStr, m.avgPerYearStr, "")
-
-	// Third column: total ECTS per year chart
-	col3 := lipgloss.JoinVertical(lipgloss.Left, m.avgECTSPerYearStr, "", m.ectsStr)
-
-	// Fourth column: help sections (commands table and errors table stacked)
-	helpCommands := m.renderCommandsHelp(uniColor)
-	helpErrors := m.renderErrorsExplanation(uniColor)
-	helpSection := lipgloss.JoinVertical(lipgloss.Left, helpCommands, "", helpErrors)
-
-	// Full layout: course table | stats + avg chart + ECTS bar | ECTS/year chart | help
-	grid := lipgloss.JoinHorizontal(lipgloss.Top, m.tableStr, gap, col2, gap, col3, gap, helpSection)
-
-	// Create text input box with width matching the grid
-	gridWidth := lipgloss.Width(grid)
-
-	inputStyle := lipgloss.NewStyle().
-		Border(lipgloss.NormalBorder()).
-		BorderForeground(uniColor).
-		Padding(0, 1).
-		Width(gridWidth - 2) // Account for padding
-
-	textInputBox := inputStyle.Render(m.textInput.View())
-
-	// Center everything horizontally
-	centeredInput := lipgloss.NewStyle().
-		Width(m.termWidth).
-		Align(lipgloss.Center).
-		Render(textInputBox)
-
-	s := "\n" + centeredInput + "\n"
-
-	// Show status message if available
-	if m.statusMessage != "" {
-		statusStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("42")).
-			Bold(true).
-			Width(m.termWidth).
-			Align(lipgloss.Center)
-		s += statusStyle.Render(m.statusMessage) + "\n\n"
-	} else {
-		s += "\n"
-	}
-
-	// Center the grid horizontally
-	centeredGrid := lipgloss.NewStyle().
-		Width(m.termWidth).
-		Align(lipgloss.Center).
-		Render(grid)
-
-	s += centeredGrid + "\n"
-
-	footerStyle := lipgloss.NewStyle().
-		Width(m.termWidth).
-		Align(lipgloss.Center)
-	s += "\n" + footerStyle.Render("Press Ctrl + Q to go back, Ctrl + C to quit.") + "\n"
-
-	return s
-}
-
-func (m Model) renderCommandsHelp(uniColor lipgloss.Color) string {
-	t := table.New().
-		Border(lipgloss.NormalBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(uniColor)).
-		StyleFunc(func(row, col int) lipgloss.Style {
-			switch {
-			case row == table.HeaderRow:
-				return lipgloss.NewStyle().Foreground(tui.DefaultColor).Align(lipgloss.Center)
-			case row%2 == 0:
-				return lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Padding(0, 1)
-			default:
-				return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Padding(0, 1)
-			}
-		}).
-		Headers("Command", "Description", "Example").
-		Rows(
-			[]string{"/add", "Add new course", "/add Applied_Math 1 7 5"},
-			[]string{"/edit", "Update course field", "/edit Applied_Math Grade 9"},
-			[]string{"/delete", "Delete course", "/delete Applied_math"},
-		)
-
-	return t.Render()
-}
-
-func (m Model) renderErrorsExplanation(uniColor lipgloss.Color) string {
-	t := table.New().
-		Border(lipgloss.NormalBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(uniColor)).
-		StyleFunc(func(row, col int) lipgloss.Style {
-			switch {
-			case row == table.HeaderRow:
-				return lipgloss.NewStyle().Foreground(tui.DefaultColor).Align(lipgloss.Center)
-			case row%2 == 0:
-				return lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Padding(0, 1)
-			default:
-				return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Padding(0, 1)
-			}
-		}).
-		Headers("Error", "Explanation").
-		Rows(
-			[]string{"Invalid format", "Wrong command syntax"},
-			[]string{"Course not found", "Course name doesn't exist"},
-			[]string{"Year not integer", "Year must be a number"},
-			[]string{"Grade not number", "Grade must be decimal/int"},
-			[]string{"ECTS not integer", "ECTS must be a number"},
-			[]string{"Invalid field", "Field not in Name/Year/Grade/ECTS"},
-		)
-
-	return t.Render()
 }
