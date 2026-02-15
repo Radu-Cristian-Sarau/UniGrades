@@ -44,7 +44,7 @@ type Model struct {
 
 func InitialModel(headers []string, courses []bson.M, client *mongo.Client) Model {
 	ti := textinput.New()
-	ti.Placeholder = "Type /add Name Year Grade ECTS or your notes..."
+	ti.Placeholder = "Type /add Name Year Grade ECTS or /delete CourseName..."
 	ti.Focus()
 
 	tableStr := tui.RenderTable(tui.DefaultColor, headers, courses)
@@ -132,10 +132,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.screen = DataScreen
 				}
 			} else if m.screen == DataScreen {
-				// Handle enter in text input - process /add command
+				// Handle enter in text input - process commands
 				input := m.textInput.Value()
 				if strings.HasPrefix(input, "/add ") {
 					m.processAddCommand(input)
+					m.textInput.SetValue("")
+				} else if strings.HasPrefix(input, "/delete ") {
+					m.processDeleteCommand(input)
 					m.textInput.SetValue("")
 				}
 			}
@@ -190,6 +193,30 @@ func (m *Model) processAddCommand(input string) {
 	m.refreshCharts()
 
 	m.statusMessage = fmt.Sprintf("✓ Course '%s' added successfully (ID: %s)", name, id)
+}
+
+// processDeleteCommand parses and executes the /delete command
+func (m *Model) processDeleteCommand(input string) {
+	// Parse: /delete CourseName
+	parts := strings.Fields(input)
+	if len(parts) < 2 {
+		m.statusMessage = "Invalid format. Use: /delete CourseName"
+		return
+	}
+
+	courseName := parts[1]
+
+	err := api.DeleteCourse(m.mongoClient, courseName)
+	if err != nil {
+		m.statusMessage = fmt.Sprintf("Error deleting course: %v", err)
+		return
+	}
+
+	// Refresh course list
+	m.courses = api.GetAllCourses(m.mongoClient)
+	m.refreshCharts()
+
+	m.statusMessage = fmt.Sprintf("✓ Course '%s' deleted successfully", courseName)
 }
 
 // refreshCharts updates all the chart displays

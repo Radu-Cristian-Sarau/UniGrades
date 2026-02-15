@@ -92,6 +92,22 @@ func AddCourse(client *mongo.Client, course Course) (string, error) {
 	return result.InsertedID.(bson.ObjectID).Hex(), nil
 }
 
+// DeleteCourse removes a course from the MongoDB database by name
+func DeleteCourse(client *mongo.Client, courseName string) error {
+	coll := client.Database("CourseInfo").Collection("TUe")
+
+	result, err := coll.DeleteOne(context.TODO(), bson.D{{Key: "Name", Value: courseName}})
+	if err != nil {
+		return fmt.Errorf("failed to delete course: %w", err)
+	}
+
+	if result.DeletedCount == 0 {
+		return fmt.Errorf("course '%s' not found", courseName)
+	}
+
+	return nil
+}
+
 func Run() {
 	godotenv.Load(".env")
 	uri := os.Getenv("MONGODB_URI")
