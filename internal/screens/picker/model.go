@@ -161,10 +161,31 @@ func (m Model) renderPickerScreen() string {
 }
 
 func (m Model) renderDataScreen() string {
+	// Get selected university
+	selectedUni := ""
+	for i := range m.selected {
+		selectedUni = m.choices[i]
+	}
+
 	// Get selected university color
 	uniColor := tui.DefaultColor
 	for i := range m.selected {
 		uniColor = uniColors[m.choices[i]]
+	}
+
+	// Check if data is unavailable for this university
+	if selectedUni == "TUD" || selectedUni == "TUM" {
+		message := fmt.Sprintf("Data unavailable: Studies at %s have not started yet", selectedUni)
+		msgBox := lipgloss.NewStyle().
+			Border(lipgloss.NormalBorder()).
+			BorderForeground(uniColor).
+			Padding(1, 2).
+			Foreground(lipgloss.Color("243")).
+			Render(message)
+
+		s := "\n" + msgBox + "\n"
+		s += "\nPress Ctrl + Q to go back, Ctrl + C to quit.\n"
+		return s
 	}
 
 	gap := "   "
