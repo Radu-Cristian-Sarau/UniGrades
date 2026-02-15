@@ -297,7 +297,7 @@ func (m Model) View() string {
 }
 
 func (m Model) renderPickerScreen() string {
-	s := "\n\nSelect university: \n\n"
+	s := "\n\n\nSelect university:\n\n"
 
 	for i, choice := range m.choices {
 		cursor := " "
@@ -314,8 +314,15 @@ func (m Model) renderPickerScreen() string {
 		s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, style.Render(choice))
 	}
 
-	s += "\nPress Ctrl + C to quit.\n"
-	return s
+	s += "\nPress Ctrl + C to quit."
+
+	// Center the entire picker screen
+	centeredContent := lipgloss.NewStyle().
+		Width(m.termWidth).
+		Align(lipgloss.Center).
+		Render(s)
+
+	return "\n" + centeredContent + "\n"
 }
 
 func (m Model) renderDataScreen() string {
@@ -341,8 +348,17 @@ func (m Model) renderDataScreen() string {
 			Foreground(lipgloss.Color("243")).
 			Render(message)
 
-		s := "\n" + msgBox + "\n"
-		s += "\nPress Ctrl + Q to go back, Ctrl + C to quit.\n"
+		contentStyle := lipgloss.NewStyle().
+			Width(m.termWidth).
+			Align(lipgloss.Center)
+
+		s := "\n" + contentStyle.Render(msgBox) + "\n"
+
+		footerStyle := lipgloss.NewStyle().
+			Width(m.termWidth).
+			Align(lipgloss.Center)
+		s += "\n" + footerStyle.Render("Press Ctrl + Q to go back, Ctrl + C to quit.") + "\n"
+
 		return s
 	}
 
@@ -373,20 +389,38 @@ func (m Model) renderDataScreen() string {
 
 	textInputBox := inputStyle.Render(m.textInput.View())
 
-	s := "\n" + textInputBox + "\n"
+	// Center everything horizontally
+	centeredInput := lipgloss.NewStyle().
+		Width(m.termWidth).
+		Align(lipgloss.Center).
+		Render(textInputBox)
+
+	s := "\n" + centeredInput + "\n"
 
 	// Show status message if available
 	if m.statusMessage != "" {
 		statusStyle := lipgloss.NewStyle().
 			Foreground(lipgloss.Color("42")).
-			Bold(true)
+			Bold(true).
+			Width(m.termWidth).
+			Align(lipgloss.Center)
 		s += statusStyle.Render(m.statusMessage) + "\n\n"
 	} else {
 		s += "\n"
 	}
 
-	s += grid + "\n"
-	s += "\nPress Ctrl + Q to go back, Ctrl + C to quit.\n"
+	// Center the grid horizontally
+	centeredGrid := lipgloss.NewStyle().
+		Width(m.termWidth).
+		Align(lipgloss.Center).
+		Render(grid)
+
+	s += centeredGrid + "\n"
+
+	footerStyle := lipgloss.NewStyle().
+		Width(m.termWidth).
+		Align(lipgloss.Center)
+	s += "\n" + footerStyle.Render("Press Ctrl + Q to go back, Ctrl + C to quit.") + "\n"
 
 	return s
 }
