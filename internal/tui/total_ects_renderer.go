@@ -33,7 +33,14 @@ func RenderECTS(uniColor lipgloss.Color, courses []bson.M) string {
 
 	header := fmt.Sprintf("Total ECTS")
 	scaleLine := buildScaleLine(totalECTS)
-	return header + "\n" + bc.View() + "\n" + scaleLine
+	content := header + "\n" + bc.View() + "\n" + scaleLine
+
+	box := lipgloss.NewStyle().
+		Border(lipgloss.NormalBorder()).
+		BorderForeground(uniColor).
+		Padding(0, 1)
+
+	return box.Render(content)
 }
 
 func buildScaleLine(totalECTS float64) string {

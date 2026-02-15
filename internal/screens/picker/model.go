@@ -121,12 +121,11 @@ func (m Model) View() string {
 	gap := "   "
 
 	// Second column: average grades, average grades per year chart, total ECTS bar beneath
-	col2 := lipgloss.JoinVertical(lipgloss.Left, m.avgStr, m.avgPerYearStr, "", m.ectsStr)
+	col2 := lipgloss.JoinVertical(lipgloss.Left, m.avgStr, m.avgPerYearStr, "")
 
-	// Fourth column: total ECTS per year chart
-	col3 := m.avgECTSPerYearStr
-
-	// Full layout: course table | stats + avg chart + ECTS bar | (empty) | ECTS/year chart
+	// Third column: total ECTS per year chart
+	col3 := lipgloss.JoinVertical(lipgloss.Left, m.avgECTSPerYearStr, "", m.ectsStr)
+	// Full layout: course table | stats + avg chart + ECTS bar | ECTS/year chart
 	grid := lipgloss.JoinHorizontal(lipgloss.Top, m.tableStr, gap, col2, gap, col3)
 
 	s += "\n" + grid + "\n"
