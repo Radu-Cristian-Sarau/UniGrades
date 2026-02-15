@@ -354,8 +354,10 @@ func (m Model) renderDataScreen() string {
 	// Third column: total ECTS per year chart
 	col3 := lipgloss.JoinVertical(lipgloss.Left, m.avgECTSPerYearStr, "", m.ectsStr)
 
-	// Fourth column: help section (commands table)
-	helpSection := m.renderCommandsHelp(uniColor)
+	// Fourth column: help sections (commands table and errors table stacked)
+	helpCommands := m.renderCommandsHelp(uniColor)
+	helpErrors := m.renderErrorsExplanation(uniColor)
+	helpSection := lipgloss.JoinVertical(lipgloss.Left, helpCommands, "", helpErrors)
 
 	// Full layout: course table | stats + avg chart + ECTS bar | ECTS/year chart | help
 	grid := lipgloss.JoinHorizontal(lipgloss.Top, m.tableStr, gap, col2, gap, col3, gap, helpSection)
@@ -408,6 +410,33 @@ func (m Model) renderCommandsHelp(uniColor lipgloss.Color) string {
 			[]string{"/add", "Add new course", "/add Applied_Math 1 7 5"},
 			[]string{"/edit", "Update course field", "/edit Applied_Math Grade 9"},
 			[]string{"/delete", "Delete course", "/delete Applied_math"},
+		)
+
+	return t.Render()
+}
+
+func (m Model) renderErrorsExplanation(uniColor lipgloss.Color) string {
+	t := table.New().
+		Border(lipgloss.NormalBorder()).
+		BorderStyle(lipgloss.NewStyle().Foreground(uniColor)).
+		StyleFunc(func(row, col int) lipgloss.Style {
+			switch {
+			case row == table.HeaderRow:
+				return lipgloss.NewStyle().Foreground(uniColor).Bold(true).Align(lipgloss.Center)
+			case row%2 == 0:
+				return lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Padding(0, 1)
+			default:
+				return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Padding(0, 1)
+			}
+		}).
+		Headers("Error", "Explanation").
+		Rows(
+			[]string{"Invalid format", "Wrong command syntax"},
+			[]string{"Course not found", "Course name doesn't exist"},
+			[]string{"Year not integer", "Year must be a number"},
+			[]string{"Grade not number", "Grade must be decimal/int"},
+			[]string{"ECTS not integer", "ECTS must be a number"},
+			[]string{"Invalid field", "Field not in Name/Year/Grade/ECTS"},
 		)
 
 	return t.Render()
