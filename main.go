@@ -35,7 +35,7 @@ func main() {
 	headers := api.GetTableHeaders(client)
 	courses := api.GetAllCourses(client)
 
-	p := tea.NewProgram(picker.InitialModel(headers, courses))
+	p := tea.NewProgram(picker.InitialModel(headers, courses, client))
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)

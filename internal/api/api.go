@@ -72,6 +72,26 @@ func getCourseDataByName(client *mongo.Client, name string) {
 	fmt.Printf("%s\n", jsonData)
 }
 
+// Course represents the structure of a course document
+type Course struct {
+	Name  string  `bson:"Name"`
+	Year  int     `bson:"Year"`
+	Grade float64 `bson:"Grade"`
+	ECTS  int     `bson:"ECTS"`
+}
+
+// AddCourse inserts a new course into the MongoDB database
+func AddCourse(client *mongo.Client, course Course) (string, error) {
+	coll := client.Database("CourseInfo").Collection("TUe")
+
+	result, err := coll.InsertOne(context.TODO(), course)
+	if err != nil {
+		return "", fmt.Errorf("failed to insert course: %w", err)
+	}
+
+	return result.InsertedID.(bson.ObjectID).Hex(), nil
+}
+
 func Run() {
 	godotenv.Load(".env")
 	uri := os.Getenv("MONGODB_URI")

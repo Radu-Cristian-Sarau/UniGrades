@@ -3,6 +3,7 @@ module UniGrades
 go 1.25.6
 
 require (
+	github.com/charmbracelet/bubbles v0.20.0
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/charmbracelet/x/term v0.2.1
@@ -11,7 +12,7 @@ require (
 )
 
 require (
-	github.com/charmbracelet/bubbles v0.20.0 // indirect
+	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/lrstanley/bubblezone v0.0.0-20240914071701-b48c55a5e78e // indirect
 )
 

@@ -2,11 +2,16 @@ package picker
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
+	textinput "github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 
+	"UniGrades/internal/api"
 	"UniGrades/internal/tui"
 	"UniGrades/internal/university"
 )
@@ -32,9 +37,16 @@ type Model struct {
 	termWidth         int
 	termHeight        int
 	screen            Screen
+	textInput         textinput.Model
+	mongoClient       *mongo.Client
+	statusMessage     string
 }
 
-func InitialModel(headers []string, courses []bson.M) Model {
+func InitialModel(headers []string, courses []bson.M, client *mongo.Client) Model {
+	ti := textinput.New()
+	ti.Placeholder = "Type /add Name Year Grade ECTS or your notes..."
+	ti.Focus()
+
 	tableStr := tui.RenderTable(tui.DefaultColor, headers, courses)
 	avgStr := tui.RenderAverageGrades(tui.DefaultColor, courses)
 	avgPerYearStr := tui.RenderAverageGradesPerYear(tui.DefaultColor, courses)
@@ -53,6 +65,9 @@ func InitialModel(headers []string, courses []bson.M) Model {
 		termWidth:         80,
 		termHeight:        24,
 		screen:            PickerScreen,
+		textInput:         ti,
+		mongoClient:       client,
+		statusMessage:     "",
 	}
 }
 
@@ -75,6 +90,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.screen == DataScreen {
 				m.screen = PickerScreen
 				m.selected = make(map[int]struct{})
+				m.textInput.SetValue("")
+				m.statusMessage = ""
 				return m, nil
 			}
 
@@ -94,7 +111,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 
-		case "enter", " ":
+		case "enter":
 			if m.screen == PickerScreen {
 				_, ok := m.selected[m.cursor]
 				if ok {
@@ -114,11 +131,86 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.ectsStr = tui.RenderECTS(color, m.courses)
 					m.screen = DataScreen
 				}
+			} else if m.screen == DataScreen {
+				// Handle enter in text input - process /add command
+				input := m.textInput.Value()
+				if strings.HasPrefix(input, "/add ") {
+					m.processAddCommand(input)
+					m.textInput.SetValue("")
+				}
 			}
+		}
+
+		// Handle text input when on DataScreen
+		if m.screen == DataScreen {
+			var cmd tea.Cmd
+			m.textInput, cmd = m.textInput.Update(msg)
+			return m, cmd
 		}
 	}
 
 	return m, nil
+}
+
+// processAddCommand parses and executes the /add command
+func (m *Model) processAddCommand(input string) {
+	// Parse: /add Name Year Grade ECTS
+	parts := strings.Fields(input)
+	if len(parts) < 5 {
+		m.statusMessage = "Invalid format. Use: /add Name Year Grade ECTS"
+		return
+	}
+
+	name := parts[1]
+	year, errYear := strconv.Atoi(parts[2])
+	grade, errGrade := strconv.ParseFloat(parts[3], 64)
+	ects, errEcts := strconv.Atoi(parts[4])
+
+	if errYear != nil || errGrade != nil || errEcts != nil {
+		m.statusMessage = "Error: Year and ECTS must be integers, Grade must be a number"
+		return
+	}
+
+	// Create course and add to database
+	course := api.Course{
+		Name:  name,
+		Year:  year,
+		Grade: grade,
+		ECTS:  ects,
+	}
+
+	id, err := api.AddCourse(m.mongoClient, course)
+	if err != nil {
+		m.statusMessage = fmt.Sprintf("Error adding course: %v", err)
+		return
+	}
+
+	// Refresh course list
+	m.courses = api.GetAllCourses(m.mongoClient)
+	m.refreshCharts()
+
+	m.statusMessage = fmt.Sprintf("✓ Course '%s' added successfully (ID: %s)", name, id)
+}
+
+// refreshCharts updates all the chart displays
+func (m *Model) refreshCharts() {
+	selectedUni := ""
+	for i := range m.selected {
+		selectedUni = m.choices[i]
+	}
+
+	color := tui.DefaultColor
+	for i := range m.selected {
+		color = uniColors[m.choices[i]]
+	}
+
+	if selectedUni != "TUD" && selectedUni != "TUM" {
+		m.tableStr = tui.RenderTable(color, m.headers, m.courses)
+		m.avgStr = tui.RenderAverageGrades(color, m.courses)
+		m.avgPerYearStr = tui.RenderAverageGradesPerYear(color, m.courses)
+		m.avgECTSPerYearStr = tui.RenderTotalECTSPerYear(color, m.courses)
+		m.ectsStr = tui.RenderECTS(color, m.courses)
+	}
 }
 
 // SelectedUniversity returns the name of the selected university, or "" if none.
@@ -175,7 +267,7 @@ func (m Model) renderDataScreen() string {
 
 	// Check if data is unavailable for this university
 	if selectedUni == "TUD" || selectedUni == "TUM" {
-		message := fmt.Sprintf("Data unavailable: Studies at %s have not started yet", selectedUni)
+		message := fmt.Sprintf("Data unavailable: Studies at %s have not started yet.", selectedUni)
 		msgBox := lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder()).
 			BorderForeground(uniColor).
@@ -199,17 +291,30 @@ func (m Model) renderDataScreen() string {
 	// Full layout: course table | stats + avg chart + ECTS bar | ECTS/year chart
 	grid := lipgloss.JoinHorizontal(lipgloss.Top, m.tableStr, gap, col2, gap, col3)
 
-	// Create text box with width matching the grid
+	// Create text input box with width matching the grid
 	gridWidth := lipgloss.Width(grid)
-	textBox := lipgloss.NewStyle().
+
+	inputStyle := lipgloss.NewStyle().
 		Border(lipgloss.NormalBorder()).
 		BorderForeground(uniColor).
 		Padding(0, 1).
-		Width(gridWidth).
-		Render("Type your notes here...")
+		Width(gridWidth - 2) // Account for padding
 
-	s := "\n" + textBox + "\n"
-	s += "\n" + grid + "\n"
+	textInputBox := inputStyle.Render(m.textInput.View())
+
+	s := "\n" + textInputBox + "\n"
+
+	// Show status message if available
+	if m.statusMessage != "" {
+		statusStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("42")).
+			Bold(true)
+		s += statusStyle.Render(m.statusMessage) + "\n\n"
+	} else {
+		s += "\n"
+	}
+
+	s += grid + "\n"
 	s += "\nPress Ctrl + Q to go back, Ctrl + C to quit.\n"
 
 	return s
