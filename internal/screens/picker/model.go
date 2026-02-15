@@ -11,6 +11,13 @@ import (
 	"UniGrades/internal/university"
 )
 
+type Screen int
+
+const (
+	PickerScreen Screen = iota
+	DataScreen
+)
+
 type Model struct {
 	choices           []string
 	cursor            int
@@ -24,6 +31,7 @@ type Model struct {
 	courses           []bson.M
 	termWidth         int
 	termHeight        int
+	screen            Screen
 }
 
 func InitialModel(headers []string, courses []bson.M) Model {
@@ -44,6 +52,7 @@ func InitialModel(headers []string, courses []bson.M) Model {
 		courses:           courses,
 		termWidth:         80,
 		termHeight:        24,
+		screen:            PickerScreen,
 	}
 }
 
@@ -62,35 +71,49 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			return m, tea.Quit
 
+		case "ctrl+q":
+			if m.screen == DataScreen {
+				m.screen = PickerScreen
+				m.selected = make(map[int]struct{})
+				return m, nil
+			}
+
 		case "up", "k":
-			m.cursor--
-			if m.cursor < 0 {
-				m.cursor = len(m.choices) - 1
+			if m.screen == PickerScreen {
+				m.cursor--
+				if m.cursor < 0 {
+					m.cursor = len(m.choices) - 1
+				}
 			}
 
 		case "down", "j":
-			m.cursor++
-			if m.cursor >= len(m.choices) {
-				m.cursor = 0
+			if m.screen == PickerScreen {
+				m.cursor++
+				if m.cursor >= len(m.choices) {
+					m.cursor = 0
+				}
 			}
 
 		case "enter", " ":
-			_, ok := m.selected[m.cursor]
-			if ok {
-				delete(m.selected, m.cursor)
-				m.tableStr = tui.RenderTable(tui.DefaultColor, m.headers, m.courses)
-				m.avgStr = tui.RenderAverageGrades(tui.DefaultColor, m.courses)
-				m.avgPerYearStr = tui.RenderAverageGradesPerYear(tui.DefaultColor, m.courses)
-				m.avgECTSPerYearStr = tui.RenderTotalECTSPerYear(tui.DefaultColor, m.courses)
-				m.ectsStr = tui.RenderECTS(tui.DefaultColor, m.courses)
-			} else {
-				m.selected = map[int]struct{}{m.cursor: {}}
-				color := uniColors[m.choices[m.cursor]]
-				m.tableStr = tui.RenderTable(color, m.headers, m.courses)
-				m.avgStr = tui.RenderAverageGrades(color, m.courses)
-				m.avgPerYearStr = tui.RenderAverageGradesPerYear(color, m.courses)
-				m.avgECTSPerYearStr = tui.RenderTotalECTSPerYear(color, m.courses)
-				m.ectsStr = tui.RenderECTS(color, m.courses)
+			if m.screen == PickerScreen {
+				_, ok := m.selected[m.cursor]
+				if ok {
+					delete(m.selected, m.cursor)
+					m.tableStr = tui.RenderTable(tui.DefaultColor, m.headers, m.courses)
+					m.avgStr = tui.RenderAverageGrades(tui.DefaultColor, m.courses)
+					m.avgPerYearStr = tui.RenderAverageGradesPerYear(tui.DefaultColor, m.courses)
+					m.avgECTSPerYearStr = tui.RenderTotalECTSPerYear(tui.DefaultColor, m.courses)
+					m.ectsStr = tui.RenderECTS(tui.DefaultColor, m.courses)
+				} else {
+					m.selected = map[int]struct{}{m.cursor: {}}
+					color := uniColors[m.choices[m.cursor]]
+					m.tableStr = tui.RenderTable(color, m.headers, m.courses)
+					m.avgStr = tui.RenderAverageGrades(color, m.courses)
+					m.avgPerYearStr = tui.RenderAverageGradesPerYear(color, m.courses)
+					m.avgECTSPerYearStr = tui.RenderTotalECTSPerYear(color, m.courses)
+					m.ectsStr = tui.RenderECTS(color, m.courses)
+					m.screen = DataScreen
+				}
 			}
 		}
 	}
@@ -109,6 +132,13 @@ func (m Model) SelectedUniversity() string {
 var uniColors = university.ColorMap()
 
 func (m Model) View() string {
+	if m.screen == PickerScreen {
+		return m.renderPickerScreen()
+	}
+	return m.renderDataScreen()
+}
+
+func (m Model) renderPickerScreen() string {
 	s := "\n\nSelect university: \n\n"
 
 	for i, choice := range m.choices {
@@ -126,6 +156,11 @@ func (m Model) View() string {
 		s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, style.Render(choice))
 	}
 
+	s += "\nPress Ctrl + C to quit.\n"
+	return s
+}
+
+func (m Model) renderDataScreen() string {
 	// Get selected university color
 	uniColor := tui.DefaultColor
 	for i := range m.selected {
@@ -152,9 +187,9 @@ func (m Model) View() string {
 		Width(gridWidth).
 		Render("Type your notes here...")
 
-	s += "\n" + textBox + "\n"
+	s := "\n" + textBox + "\n"
 	s += "\n" + grid + "\n"
-	s += "\nPress Ctrl + C to quit.\n"
+	s += "\nPress Ctrl + Q to go back, Ctrl + C to quit.\n"
 
 	return s
 }
