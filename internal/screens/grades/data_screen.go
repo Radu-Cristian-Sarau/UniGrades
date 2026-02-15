@@ -186,7 +186,7 @@ func RenderDataScreen(m DataScreenModel) string {
 			Border(lipgloss.NormalBorder()).
 			BorderForeground(uniColor).
 			Padding(1, 2).
-			Foreground(lipgloss.Color("243")).
+			Foreground(ColorDimText).
 			Render(message)
 
 		contentStyle := lipgloss.NewStyle().
@@ -249,7 +249,7 @@ func RenderDataScreen(m DataScreenModel) string {
 	statusMsg := m.GetStatusMessage()
 	if statusMsg != "" {
 		statusStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("42")).
+			Foreground(ColorSuccess).
 			Bold(true).
 			Width(m.GetTermWidth()).
 			Align(lipgloss.Center)
@@ -284,9 +284,9 @@ func RenderCommandsHelp(uniColor lipgloss.Color) string {
 			case row == table.HeaderRow:
 				return lipgloss.NewStyle().Foreground(tui.DefaultColor).Align(lipgloss.Center)
 			case row%2 == 0:
-				return lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Padding(0, 1)
+				return lipgloss.NewStyle().Foreground(ColorTableAlternate1).Padding(0, 1)
 			default:
-				return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Padding(0, 1)
+				return lipgloss.NewStyle().Foreground(ColorTableAlternate2).Padding(0, 1)
 			}
 		}).
 		Headers("Command", "Description", "Example").
@@ -309,9 +309,9 @@ func RenderErrorsExplanation(uniColor lipgloss.Color) string {
 			case row == table.HeaderRow:
 				return lipgloss.NewStyle().Foreground(tui.DefaultColor).Align(lipgloss.Center)
 			case row%2 == 0:
-				return lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Padding(0, 1)
+				return lipgloss.NewStyle().Foreground(ColorTableAlternate1).Padding(0, 1)
 			default:
-				return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Padding(0, 1)
+				return lipgloss.NewStyle().Foreground(ColorTableAlternate2).Padding(0, 1)
 			}
 		}).
 		Headers("Error", "Explanation").

@@ -20,6 +20,8 @@ const title = `
 
 const TitleColor = lipgloss.Color("#17b118")
 
+const LinkColor = lipgloss.Color("245")
+
 const repoURL = "https://github.com/Radu-Cristian-Sarau/UniGrades"
 
 func RenderTitle() string {
@@ -28,7 +30,7 @@ func RenderTitle() string {
 
 	// OSC 8 hyperlink: \033]8;;URL\033\\LABEL\033]8;;\033\\
 	link := "\033]8;;" + repoURL + "\033\\" + repoURL + "\033]8;;\033\\"
-	linkStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Width(width).Align(lipgloss.Center)
+	linkStyle := lipgloss.NewStyle().Foreground(LinkColor).Width(width).Align(lipgloss.Center)
 
 	return titleStyle.Render(title) + "\n" + linkStyle.Render(link)
 }
