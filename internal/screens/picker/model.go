@@ -44,7 +44,7 @@ type Model struct {
 
 func InitialModel(headers []string, courses []bson.M, client *mongo.Client) Model {
 	ti := textinput.New()
-	ti.Placeholder = "Type /add Name Year Grade ECTS or /delete CourseName..."
+	ti.Placeholder = "Commands: /add Name Year Grade ECTS | /edit Name Field Value | /delete Name"
 	ti.Focus()
 
 	tableStr := tui.RenderTable(tui.DefaultColor, headers, courses)
@@ -140,6 +140,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				} else if strings.HasPrefix(input, "/delete ") {
 					m.processDeleteCommand(input)
 					m.textInput.SetValue("")
+				} else if strings.HasPrefix(input, "/edit ") {
+					m.processEditCommand(input)
+					m.textInput.SetValue("")
 				}
 			}
 		}
@@ -217,6 +220,41 @@ func (m *Model) processDeleteCommand(input string) {
 	m.refreshCharts()
 
 	m.statusMessage = fmt.Sprintf("✓ Course '%s' deleted successfully", courseName)
+}
+
+// processEditCommand parses and executes the /edit command
+// Format: /edit CourseName Field NewValue
+// Example: /edit Calculus Grade 9.5
+func (m *Model) processEditCommand(input string) {
+	// Parse: /edit CourseName Field NewValue
+	parts := strings.Fields(input)
+	if len(parts) < 4 {
+		m.statusMessage = "Invalid format. Use: /edit CourseName Field NewValue (e.g., /edit Calculus Grade 9.5)"
+		return
+	}
+
+	courseName := parts[1]
+	field := parts[2]
+	newValue := parts[3]
+
+	// Validate field name
+	validFields := map[string]bool{"Name": true, "Year": true, "Grade": true, "ECTS": true}
+	if !validFields[field] {
+		m.statusMessage = "Invalid field. Valid fields are: Name, Year, Grade, ECTS"
+		return
+	}
+
+	err := api.UpdateCourse(m.mongoClient, courseName, field, newValue)
+	if err != nil {
+		m.statusMessage = fmt.Sprintf("Error updating course: %v", err)
+		return
+	}
+
+	// Refresh course list
+	m.courses = api.GetAllCourses(m.mongoClient)
+	m.refreshCharts()
+
+	m.statusMessage = fmt.Sprintf("✓ Course '%s' field '%s' updated to '%v'", courseName, field, newValue)
 }
 
 // refreshCharts updates all the chart displays

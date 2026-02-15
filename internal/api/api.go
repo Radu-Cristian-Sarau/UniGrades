@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -102,6 +103,54 @@ func DeleteCourse(client *mongo.Client, courseName string) error {
 	}
 
 	if result.DeletedCount == 0 {
+		return fmt.Errorf("course '%s' not found", courseName)
+	}
+
+	return nil
+}
+
+// UpdateCourse updates a course field in the MongoDB database
+func UpdateCourse(client *mongo.Client, courseName, field, value string) error {
+	coll := client.Database("CourseInfo").Collection("TUe")
+
+	// Convert value to appropriate type based on field
+	var updateValue interface{}
+	var err error
+
+	switch field {
+	case "Name":
+		updateValue = value
+	case "Grade":
+		updateValue, err = strconv.ParseFloat(value, 64)
+		if err != nil {
+			return fmt.Errorf("Grade must be a number")
+		}
+	case "Year":
+		year, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("Year must be an integer")
+		}
+		updateValue = year
+	case "ECTS":
+		ects, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("ECTS must be an integer")
+		}
+		updateValue = ects
+	default:
+		return fmt.Errorf("invalid field: %s. Valid fields are: Name, Year, Grade, ECTS", field)
+	}
+
+	result, err := coll.UpdateOne(
+		context.TODO(),
+		bson.D{{Key: "Name", Value: courseName}},
+		bson.D{{Key: "$set", Value: bson.D{{Key: field, Value: updateValue}}}},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update course: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
 		return fmt.Errorf("course '%s' not found", courseName)
 	}
 
