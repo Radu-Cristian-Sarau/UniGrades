@@ -16,7 +16,7 @@ var (
 )
 
 func TableStyleFunc(uniColor lipgloss.Color) func(row, col int) lipgloss.Style {
-	headerStyle := lipgloss.NewStyle().Foreground(uniColor).Bold(true).Align(lipgloss.Center)
+	headerStyle := lipgloss.NewStyle().Foreground(DefaultColor).Align(lipgloss.Center)
 	return func(row, col int) lipgloss.Style {
 		switch {
 		case row == table.HeaderRow:

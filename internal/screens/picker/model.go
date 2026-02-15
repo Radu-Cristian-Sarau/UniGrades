@@ -398,7 +398,7 @@ func (m Model) renderCommandsHelp(uniColor lipgloss.Color) string {
 		StyleFunc(func(row, col int) lipgloss.Style {
 			switch {
 			case row == table.HeaderRow:
-				return lipgloss.NewStyle().Foreground(uniColor).Bold(true).Align(lipgloss.Center)
+				return lipgloss.NewStyle().Foreground(tui.DefaultColor).Align(lipgloss.Center)
 			case row%2 == 0:
 				return lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Padding(0, 1)
 			default:
@@ -422,7 +422,7 @@ func (m Model) renderErrorsExplanation(uniColor lipgloss.Color) string {
 		StyleFunc(func(row, col int) lipgloss.Style {
 			switch {
 			case row == table.HeaderRow:
-				return lipgloss.NewStyle().Foreground(uniColor).Bold(true).Align(lipgloss.Center)
+				return lipgloss.NewStyle().Foreground(tui.DefaultColor).Align(lipgloss.Center)
 			case row%2 == 0:
 				return lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Padding(0, 1)
 			default:
