@@ -8,6 +8,7 @@ import (
 	textinput "github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/table"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 
@@ -353,8 +354,11 @@ func (m Model) renderDataScreen() string {
 	// Third column: total ECTS per year chart
 	col3 := lipgloss.JoinVertical(lipgloss.Left, m.avgECTSPerYearStr, "", m.ectsStr)
 
-	// Full layout: course table | stats + avg chart + ECTS bar | ECTS/year chart
-	grid := lipgloss.JoinHorizontal(lipgloss.Top, m.tableStr, gap, col2, gap, col3)
+	// Fourth column: help section (commands table)
+	helpSection := m.renderCommandsHelp(uniColor)
+
+	// Full layout: course table | stats + avg chart + ECTS bar | ECTS/year chart | help
+	grid := lipgloss.JoinHorizontal(lipgloss.Top, m.tableStr, gap, col2, gap, col3, gap, helpSection)
 
 	// Create text input box with width matching the grid
 	gridWidth := lipgloss.Width(grid)
@@ -383,4 +387,28 @@ func (m Model) renderDataScreen() string {
 	s += "\nPress Ctrl + Q to go back, Ctrl + C to quit.\n"
 
 	return s
+}
+
+func (m Model) renderCommandsHelp(uniColor lipgloss.Color) string {
+	t := table.New().
+		Border(lipgloss.NormalBorder()).
+		BorderStyle(lipgloss.NewStyle().Foreground(uniColor)).
+		StyleFunc(func(row, col int) lipgloss.Style {
+			switch {
+			case row == table.HeaderRow:
+				return lipgloss.NewStyle().Foreground(uniColor).Bold(true).Align(lipgloss.Center)
+			case row%2 == 0:
+				return lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Padding(0, 1)
+			default:
+				return lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Padding(0, 1)
+			}
+		}).
+		Headers("Command", "Description", "Example").
+		Rows(
+			[]string{"/add", "Add new course", "/add Applied_Math 1 7 5"},
+			[]string{"/edit", "Update course field", "/edit Applied_Math Grade 9"},
+			[]string{"/delete", "Delete course", "/delete Applied_math"},
+		)
+
+	return t.Render()
 }
