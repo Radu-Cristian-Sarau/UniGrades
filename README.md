@@ -2,7 +2,7 @@
 
 **A terminal user interface (TUI) application for managing and monitoring university course grades, ECTS credits, and academic progress.**
 
-Created because I hate having to use two-factor authentication (2FA) anytime I want to view this data on my university's internal websites.
+Created because I deeply dislike having to use two-factor authentication (2FA) anytime I want to view this data on my university's internal websites.
 ## Features
 
 - **Interactive Dashboard** – View your courses in a table with real-time statistics
