@@ -56,9 +56,9 @@ Once in the grades view, interact with your courses using these terminal command
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `/add` | Add a new course | `/add "Applied_Math" 1 8 5` |
-| `/edit` | Modify course information | `/edit "Applied_Math" Grade 9` |
-| `/delete` | Remove a course | `/delete "Applied_Math"` |
+| `/add` | Add a new course | `/add Applied_Math 1 8 5` |
+| `/edit` | Modify course information | `/edit Applied_Math Grade 9` |
+| `/delete` | Remove a course | `/delete Applied_Math` |
 
 ### Navigation
 
