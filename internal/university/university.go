@@ -1,23 +1,26 @@
+// Package university provides university information and styling for the UniGrades application.
 package university
 
 import "github.com/charmbracelet/lipgloss"
 
-// University represents a university with its display name and brand color.
+// University represents a university entity with its name and brand color.
 type University struct {
-	Name  string
+	// Name is the display name of the university (e.g., "TU/e")
+	Name string
+	// Color is the brand/theme color for the university
 	Color lipgloss.Color
 }
 
-// All returns the list of available universities.
+// All returns a slice of all available universities with their configurations.
 func All() []University {
 	return []University{
-		{Name: "TU/e", Color: lipgloss.Color("#c81919")},
-		{Name: "TUD", Color: lipgloss.Color("#00a0da")},
-		{Name: "TUM", Color: lipgloss.Color("#0066c1")},
+		{Name: "TU/e", Color: lipgloss.Color("#c81919")}, // Eindhoven - Red
+		{Name: "TUD", Color: lipgloss.Color("#00a0da")},  // Delft - Blue
+		{Name: "TUM", Color: lipgloss.Color("#0066c1")},  // Munich - Dark Blue
 	}
 }
 
-// Names returns just the university names.
+// Names returns just the names of all available universities.
 func Names() []string {
 	unis := All()
 	names := make([]string, len(unis))
@@ -27,7 +30,8 @@ func Names() []string {
 	return names
 }
 
-// ColorMap returns a map from university name to its brand color.
+// ColorMap returns a map from university names to their brand colors.
+// This allows quick color lookups by university name.
 func ColorMap() map[string]lipgloss.Color {
 	colors := make(map[string]lipgloss.Color)
 	for _, u := range All() {

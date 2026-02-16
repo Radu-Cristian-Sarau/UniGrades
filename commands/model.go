@@ -1,97 +1,102 @@
+// Package main demonstrates a simple Bubble Tea example that checks
+// the HTTP status of a remote server. This is example code based on Bubble Tea tutorials.
 package main
 
 import (
-	"fmt"
-	"net/http"
-	"os"
-	"time"
+	// Standard library imports
+	"fmt"      // Formatted I/O
+	"net/http" // HTTP client functionality
+	"os"       // Operating system operations
+	"time"     // Time utilities
 
+	// Bubble Tea framework for terminal UI
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// URL to check for HTTP status
 const url = "https://charm.sh/"
 
+// model represents the application state.
 type model struct {
+	// status stores the HTTP response status code
 	status int
-	err    error
+	// err stores any error that occurred during the request
+	err error
 }
 
+// checkServer makes an HTTP GET request to the configured URL and returns
+// either the status code or an error wrapped in a tea.Msg.
 func checkServer() tea.Msg {
-
-	// Create an HTTP client and make a GET request.
+	// Create an HTTP client with a 10-second timeout
 	c := &http.Client{Timeout: 10 * time.Second}
 	res, err := c.Get(url)
 
+	// If the request failed, return the error wrapped in an errMsg
 	if err != nil {
-		// There was an error making our request. Wrap the error we received
-		// in a message and return it.
 		return errMsg{err}
 	}
-	// We received a response from the server. Return the HTTP staus code
-	// as a message.
+
+	// Return the HTTP status code as a statusMsg
 	return statusMsg(res.StatusCode)
 }
 
+// statusMsg is a message type that contains an HTTP status code.
 type statusMsg int
 
+// errMsg is a message type that contains an error.
 type errMsg struct{ err error }
 
-// For messages that contain errors it's often handy to also implement the
-// error interface on the message.
+// Error implements the error interface for errMsg, allowing it to be used as an error.
 func (e errMsg) Error() string { return e.err.Error() }
 
+// Init initializes the model by starting the HTTP check.
 func (m model) Init() tea.Cmd {
 	return checkServer
 }
 
+// Update handles incoming messages and updates the model state accordingly.
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case statusMsg:
-		// The server returned a status message. Save it to our model. Also
-		// tell the Bubble Tea runtime we want to exit because we have nothing
-		// else to do. We'll still be able to render a final view with out
-		// status message.
+		// Store the HTTP status and quit the program
 		m.status = int(msg)
 		return m, tea.Quit
 
 	case errMsg:
-		// There was an error. Note it in the mode;. And tell the runtime
-		// we're done and want to quit.
+		// Store the error and quit the program
 		m.err = msg
 		return m, tea.Quit
 
 	case tea.KeyMsg:
-		// Ctrl+c exits. Even with shourt running programs it's good to have
-		// a quit key, just in case your logic is off. Users will be very
-		// annoyed if they can't exit.
+		// Handle Ctrl+C to quit gracefully
 		if msg.Type == tea.KeyCtrlC {
 			return m, tea.Quit
 		}
 	}
 
-	// If we happen to get any other messages ,don't do anything
+	// Ignore all other messages
 	return m, nil
 }
 
+// View renders the current state as a string for display in the terminal.
 func (m model) View() string {
-
-	// If there's an error, print it out and don't do anything else.
+	// If an error occurred, display it and exit
 	if m.err != nil {
 		return fmt.Sprintf("\n We had some trouble: %v\n\n", m.err)
 	}
 
-	// Tell the user we're doing something.
+	// Build the status message
 	s := fmt.Sprintf("Checking %s ... ", url)
 
-	// When the server responds with a status, add it to the current line.
+	// Add the status code and text if available
 	if m.status > 0 {
 		s += fmt.Sprintf("%d %s!", m.status, http.StatusText(m.status))
 	}
 
-	// Send off whatever we came up with above for rendering.
 	return "\n" + s + "\n\n"
 }
 
+// main entry point for the HTTP status checker example.
 func main() {
 	if _, err := tea.NewProgram(model{}).Run(); err != nil {
 		fmt.Printf("Uh oh, there was an error: %v\n", err)
